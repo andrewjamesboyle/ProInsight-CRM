@@ -8,7 +8,7 @@ export class WebhookController {
 
   @Post('contact-created')
   handleContactCreated(@Body() contact: ContactCreateDto) {
-    return this.webhookService.handleContactCreatedEvent(contact);
+    return this.webhookService.handleContactCreatedEvent(contact, 'API_TOKEN');
   }
   // @Post('handle')
   // async handleWebhook(@Body() body: any) {
