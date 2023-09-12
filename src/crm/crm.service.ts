@@ -9,16 +9,41 @@ export class CrmService {
 
   extractContactDetails(contact: ContactCreateDto): Observable<any> {
     // Logic to receive contact details from CRM webhook
-    const { name, phone, email, address1, locationId } = contact;
-    return of({ name, phone, email, address1, locationId });
+    const {
+      name,
+      phone,
+      email,
+      address1,
+      city,
+      state,
+      postalCode,
+      locationId,
+    } = contact;
+    return of({
+      name,
+      phone,
+      email,
+      address1,
+      city,
+      state,
+      postalCode,
+      locationId,
+    });
   }
 
   updateContacts(apiToken: string, updatedData: any) {
     // Logic to update contacts with property details
     return this.httpService
-      .post('CRM_API_ENDPOINT_TO_UPDATE_CONTACTS', updatedData, {
-        headers: { Authorization: `Bearer ${apiToken}` },
-      })
+      .post(
+        'https://services.leadconnectorhq.com/contacts/upsert',
+        updatedData,
+        {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            Version: '2021-07-28',
+          },
+        },
+      )
       .pipe(map((response) => response.data));
   }
 }

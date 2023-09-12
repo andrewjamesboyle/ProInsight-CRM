@@ -1,64 +1,70 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
-import { Sema } from 'async-sema'; // Import the Sema class
-import { firstValueFrom } from 'rxjs';
+
+import {
+  Observable,
+  catchError,
+  from,
+  map,
+  mergeMap,
+  reduce,
+  retry,
+  throwError,
+} from 'rxjs';
 
 @Injectable()
 export class PropertyRadarService {
-  private rateLimiter = new Sema(10, { capacity: 500 }); // Initialize the rate limiter
-
   constructor(private httpService: HttpService) {}
 
-  async fetchPropertyDetails(contacts: any[]) {
+  // Prepare request payload for each contact
+  prepareCriteria(contact: any) {
+    return {
+      Criteria: [
+        { name: 'OwnerName', value: [contact.name] },
+        { name: 'OwnerPhone', value: [contact.phone] },
+        { name: 'OwnerEmail', value: [contact.email] },
+        { name: 'Address', value: [contact.address1] },
+        { name: 'City', value: [contact.city] },
+        { name: 'State', value: [contact.state] },
+        { name: 'ZipFive', value: [contact.postalCode] },
+      ],
+      Purchase: '0',
+      Fields: 'Overview',
+      Limit: '3', // match only the first three properties per CRM custom fields
+      Sort: 'string',
+      Start: '0',
+    };
+  }
+
+  fetchPropertyDetailsForContact(contact: any): Observable<any> {
     const headers = {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer YOUR_API_TOKEN',
+      Authorization: `Bearer ${process.env.PROPERTY_RADAR_API_TOKEN}`,
     };
 
-    // Function to prepare request payload for each contact
-    const prepareCriteria = (contact: any) => {
-      return {
-        Criteria: [
-          { name: 'OwnerFirstName', value: [contact.firstName] },
-          { name: 'OwnerLastName', value: [contact.lastName] },
-          { name: 'Address', value: [contact.address] },
-          { name: 'City', value: [contact.city] },
-          { name: 'State', value: [contact.state] },
-          { name: 'ZipFive', value: [contact.zipFive] },
-        ],
-        Purchase: '0',
-        Fields: 'Overview',
-        Limit: '3', // Limit set to 3 - match only the first three properties
-        Sort: 'string',
-        Start: '0',
-      };
-    };
+    const body = this.prepareCriteria(contact);
+    return this.httpService
+      .post('https://api.propertyradar.com/v1/properties', body, { headers })
+      .pipe(
+        retry(3), // Retry up to 3 times on failure
+        catchError((err) => {
+          console.error(
+            `Failed to fetch for contact ${contact.id}: ${err.message}`,
+          );
+          return throwError(() => err);
+        }),
+        map((response) => response.data),
+      );
+  }
 
-    const results = [];
-
-    for (const contact of contacts) {
-      await this.rateLimiter.acquire(); // Acquire a permit from the rate limiter
-
-      try {
-        const body = prepareCriteria(contact);
-        const response = await firstValueFrom(
-          this.httpService.post(
-            'https://api.propertyradar.com/v1/properties',
-            body,
-            { headers },
-          ),
-        );
-
-        results.push(response.data);
-      } catch (err) {
-        console.error(
-          `Failed to fetch property details for contact ${contact.id}: ${err.message}`,
-        );
-      } finally {
-        this.rateLimiter.release(); // Release the permit back to the rate limiter
-      }
-    }
-
-    return results;
+  fetchPropertyDetails(contacts: any[]): Observable<any[]> {
+    return from(contacts).pipe(
+      mergeMap(
+        (contact) => this.fetchPropertyDetailsForContact(contact),
+        null,
+        10,
+      ), // 10 concurrent requests
+      reduce((acc, one) => [...acc, one], [] as any[]), // Collect results into an array
+    );
   }
 }
