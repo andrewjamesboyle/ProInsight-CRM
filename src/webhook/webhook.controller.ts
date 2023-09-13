@@ -7,13 +7,8 @@ export class WebhookController {
   constructor(private webhookService: WebhookService) {}
 
   @Post('contact-created')
-  handleContactCreated(@Body() contact: ContactCreateDto) {
-    return this.webhookService.handleContactCreatedEvent(contact, 'API_TOKEN');
+  handleContactCreated(@Body() contact: ContactCreateDto, API_TOKEN: string) {
+    return this.webhookService.handleContactCreatedEvent(contact, API_TOKEN);
   }
-  // @Post('handle')
-  // async handleWebhook(@Body() body: any) {
-  //   const apiToken = body.apiToken;
-  //   await this.webhookService.handleWebhookEvent(apiToken);
-  //   return { message: 'Webhook processed successfully!' };
-  // }
+  // TO DO: evaluate API_TOKEN parameter
 }
