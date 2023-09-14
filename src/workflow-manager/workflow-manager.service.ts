@@ -18,14 +18,11 @@ export class WorkflowManagerService {
     return this.crmService.extractContactDetails(contact).pipe(
       tap((contactDetails) => {
         console.log('Extracted contact details: ', contactDetails);
-        this.contactDetails = contactDetails;
         // Retrieve API token here and set this.apiToken
       }),
-      switchMap(() => {
+      switchMap((contactDetails) => {
         console.log('Fetching property details...');
-        return this.propertyRadarService.fetchPropertyDetails(
-          this.contactDetails,
-        );
+        return this.propertyRadarService.fetchPropertyDetails(contactDetails);
       }),
       tap((propertyDetails) => {
         console.log('Fetched property details: ', propertyDetails);
@@ -49,9 +46,9 @@ export class WorkflowManagerService {
     contactDetails: any,
     propertyDetails: any,
   ): any {
-    // Your logic to merge contactDetails and propertyDetails goes here.
-    // This could be as simple or as complex as needed.
-    // For demonstration, returning the merged object:
+    // TO DO: add logic to merge contactDetails and propertyDetails here.
+    // I need to add the LocationId to the propertyDetails object
+    // return the merged object:
     return { ...contactDetails, ...propertyDetails };
   }
 }
