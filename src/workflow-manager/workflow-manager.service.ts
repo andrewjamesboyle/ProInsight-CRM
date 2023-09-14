@@ -1,45 +1,36 @@
 import { PropertyRadarService } from 'src/property-radar/property-radar.service'; // Adjust the import paths as needed
 import { ContactCreateDto } from 'src/contact-create.dto'; // Adjust the import paths as needed
-import { Observable } from 'rxjs';
-import { tap, switchMap } from 'rxjs/operators';
 import { CrmService } from 'src/crm/crm.service';
 
 export class WorkflowManagerService {
-  private contactDetails: any;
-  private apiToken: string;
-  private propertyDetails: any;
-
   constructor(
     private crmService: CrmService,
     private propertyRadarService: PropertyRadarService,
   ) {}
 
-  startWorkflow(contact: ContactCreateDto): Observable<any> {
-    return this.crmService.extractContactDetails(contact).pipe(
-      tap((contactDetails) => {
-        console.log('Extracted contact details: ', contactDetails);
-        // Retrieve API token here and set this.apiToken
-      }),
-      switchMap((contactDetails) => {
-        console.log('Fetching property details...');
-        return this.propertyRadarService.fetchPropertyDetails(contactDetails);
-      }),
-      tap((propertyDetails) => {
-        console.log('Fetched property details: ', propertyDetails);
-        this.propertyDetails = propertyDetails;
-      }),
-      switchMap(() => {
-        console.log('Updating Contact Property Details...');
-        const updatedContactDetails = this.mergeContactAndPropertyDetails(
-          this.contactDetails,
-          this.propertyDetails,
-        );
-        return this.crmService.updateContacts(
-          this.apiToken,
-          updatedContactDetails,
-        );
-      }),
-    );
+  async startWorkflow(contact: ContactCreateDto) {
+    try {
+      // Extract Contact Details
+      const contactDetails =
+        await this.crmService.extractContactDetails(contact);
+      console.log('Extracted contact details: ', contactDetails);
+
+      // Fetch Property Details
+      console.log('Fetching property details...');
+      const propertyDetails =
+        await this.propertyRadarService.fetchPropertyDetails(contactDetails);
+      console.log('Fetched property details: ', propertyDetails);
+
+      // Merge and Update Contact
+      console.log('Updating Contact Property Details...');
+      const updatedContactDetails = this.mergeContactAndPropertyDetails(
+        contactDetails,
+        propertyDetails,
+      );
+      await this.crmService.updateContacts(updatedContactDetails);
+    } catch (error) {
+      throw new Error(`Workflow failed: ${error.message}`);
+    }
   }
 
   private mergeContactAndPropertyDetails(

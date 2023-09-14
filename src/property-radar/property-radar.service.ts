@@ -1,20 +1,15 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
-
-import {
-  Observable,
-  catchError,
-  from,
-  map,
-  mergeMap,
-  reduce,
-  retry,
-  throwError,
-} from 'rxjs';
+import { Sema } from 'async-sema';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class PropertyRadarService {
-  constructor(private httpService: HttpService) {}
+  private sema: Sema;
+
+  constructor(private httpService: HttpService) {
+    this.sema = new Sema(10); // Allow 10 concurrent operations
+  }
 
   // Prepare request payload for each contact
   prepareCriteria(contact: any) {
@@ -36,35 +31,40 @@ export class PropertyRadarService {
     };
   }
 
-  fetchPropertyDetailsForContact(contact: any): Observable<any> {
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.PROPERTY_RADAR_API_TOKEN}`,
-    };
+  async fetchPropertyDetailsForContact(contact: any): Promise<any> {
+    // Acquire a semaphore before making an API request
+    await this.sema.acquire();
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.PROPERTY_RADAR_API_TOKEN}`,
+      };
 
-    const body = this.prepareCriteria(contact);
-    return this.httpService
-      .post('https://api.propertyradar.com/v1/properties', body, { headers })
-      .pipe(
-        retry(3), // Retry up to 3 times on failure
-        catchError((err) => {
-          console.error(
-            `Failed to fetch for contact ${contact.id}: ${err.message}`,
-          );
-          return throwError(() => err);
-        }),
-        map((response) => response.data),
+      const body = this.prepareCriteria(contact);
+      const response = await firstValueFrom(
+        this.httpService.post(
+          'https://api.propertyradar.com/v1/properties',
+          body,
+          { headers },
+        ),
       );
+
+      return response.data;
+    } catch (err) {
+      console.error(
+        `Failed to fetch for contact ${contact.id}: ${err.message}`,
+      );
+      throw err;
+    } finally {
+      // Release the semaphore
+      this.sema.release();
+    }
   }
 
-  fetchPropertyDetails(contacts: any[]): Observable<any[]> {
-    return from(contacts).pipe(
-      mergeMap(
-        (contact) => this.fetchPropertyDetailsForContact(contact),
-        null,
-        10,
-      ), // 10 concurrent requests
-      reduce((acc, one) => [...acc, one], [] as any[]), // Collect results into an array
+  async fetchPropertyDetails(contacts: any[]): Promise<any[]> {
+    const promises = contacts.map((contact) =>
+      this.fetchPropertyDetailsForContact(contact),
     );
+    return Promise.all(promises);
   }
 }

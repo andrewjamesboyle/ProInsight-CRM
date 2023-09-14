@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { Observable, map, of } from 'rxjs';
 import { ContactCreateDto } from 'src/contact-create.dto';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CrmService {
   constructor(private httpService: HttpService) {}
 
-  extractContactDetails(contact: ContactCreateDto): Observable<any> {
+  async extractContactDetails(contact: ContactCreateDto): Promise<any> {
     // Logic to receive contact details from CRM webhook
     const {
       name,
@@ -19,7 +19,8 @@ export class CrmService {
       postalCode,
       locationId,
     } = contact;
-    return of({
+
+    return Promise.resolve({
       name,
       phone,
       email,
@@ -31,19 +32,24 @@ export class CrmService {
     });
   }
 
-  updateContacts(apiToken: string, updatedData: any) {
-    // Logic to update contacts with property details
-    return this.httpService
-      .post(
+  async updateContacts(updatedData: any): Promise<any> {
+    try {
+      const response$ = this.httpService.post(
         'https://services.leadconnectorhq.com/contacts/upsert',
         updatedData,
         {
           headers: {
-            Authorization: `Bearer ${apiToken}`,
+            Authorization: `Bearer ${process.env.PROPERTY_RADAR_API_TOKEN}`,
             Version: '2021-07-28',
           },
         },
-      )
-      .pipe(map((response) => response.data));
+      );
+
+      const response = await firstValueFrom(response$);
+      return response.data;
+    } catch (error) {
+      // TO DO: Handle errors here, or just re-throw
+      throw error;
+    }
   }
 }
