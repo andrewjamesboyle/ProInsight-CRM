@@ -15,13 +15,13 @@ export class PropertyRadarService {
   prepareCriteria(contact: any) {
     return {
       Criteria: [
-        { name: 'OwnerName', value: [contact.name] },
-        { name: 'OwnerPhone', value: [contact.phone] },
-        { name: 'OwnerEmail', value: [contact.email] },
-        { name: 'Address', value: [contact.address1] },
-        { name: 'City', value: [contact.city] },
-        { name: 'State', value: [contact.state] },
-        { name: 'ZipFive', value: [contact.postalCode] },
+        { name: 'OwnerName', value: contact.name },
+        { name: 'OwnerPhone', value: contact.phone },
+        { name: 'OwnerEmail', value: contact.email },
+        { name: 'Address', value: contact.address1 },
+        { name: 'City', value: contact.city },
+        { name: 'State', value: contact.state },
+        { name: 'ZipFive', value: contact.postalCode },
       ],
       Purchase: '0',
       Fields: 'Overview',
@@ -41,6 +41,7 @@ export class PropertyRadarService {
       };
 
       const body = this.prepareCriteria(contact);
+      console.log('Fetching property details for contact: ', body);
       const response = await firstValueFrom(
         this.httpService.post(
           'https://api.propertyradar.com/v1/properties',
@@ -52,7 +53,7 @@ export class PropertyRadarService {
       return response.data;
     } catch (err) {
       console.error(
-        `Failed to fetch for contact ${contact.id}: ${err.message}`,
+        `Failed to fetch for contact ${contact.name}: ${err.message}`,
       );
       throw err;
     } finally {
@@ -61,10 +62,14 @@ export class PropertyRadarService {
     }
   }
 
-  async fetchPropertyDetails(contacts: any[]): Promise<any[]> {
-    const promises = contacts.map((contact) =>
-      this.fetchPropertyDetailsForContact(contact),
-    );
-    return Promise.all(promises);
+  // async fetchPropertyDetails(contacts: any[]): Promise<any[]> {
+  //   const promises = contacts.map((contact) =>
+  //     this.fetchPropertyDetailsForContact(contact),
+  //   );
+  //   return Promise.all(promises);
+  // }
+
+  async fetchPropertyDetails(contact: any): Promise<any> {
+    return this.fetchPropertyDetailsForContact(contact);
   }
 }
