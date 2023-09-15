@@ -16,7 +16,6 @@ export class WorkflowManagerService {
       console.log('Extracted contact details: ', contactDetails);
 
       // Fetch Property Details
-      console.log('Fetching property details...');
       const propertyDetails =
         await this.propertyRadarService.fetchPropertyDetails(contactDetails);
       console.log('Fetched property details: ', propertyDetails);
