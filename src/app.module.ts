@@ -6,10 +6,11 @@ import { PropertyRadarModule } from './property-radar/property-radar.module';
 import { WebhookModule } from './webhook/webhook.module';
 // import { OAuthController } from './oauth/oauth.controller';
 import { WorkflowManagerService } from './workflow-manager/workflow-manager.service';
+import { SupabaseService } from './supabase/supabase.service';
 
 @Module({
   imports: [CrmModule, PropertyRadarModule, WebhookModule],
   controllers: [AppController],
-  providers: [AppService, WorkflowManagerService],
+  providers: [AppService, WorkflowManagerService, SupabaseService],
 })
 export class AppModule {}
