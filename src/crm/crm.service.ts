@@ -5,7 +5,10 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CrmService {
-  constructor(private httpService: HttpService) {}
+  constructor(
+    private httpService: HttpService,
+    private readonly oauthController: OAuthController,
+  ) {}
 
   async extractContactDetails(contact: ContactCreateDto): Promise<any> {
     // Logic to receive contact details from CRM webhook
@@ -32,14 +35,18 @@ export class CrmService {
     });
   }
 
-  async updateContacts(updatedData: any): Promise<any> {
+  async updateContacts(updatedContactDetails: any): Promise<any> {
     try {
+      const token = await this.oauthController.getToken(
+        updatedContactDetails.locationId,
+      );
+
       const response$ = this.httpService.post(
         'https://services.leadconnectorhq.com/contacts/upsert',
-        updatedData,
+        updatedContactDetails,
         {
           headers: {
-            Authorization: `Bearer ${process.env.PROPERTY_RADAR_API_TOKEN}`,
+            Authorization: `Bearer ${token}`,
             Version: '2021-07-28',
           },
         },

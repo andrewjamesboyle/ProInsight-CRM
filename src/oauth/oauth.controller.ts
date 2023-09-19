@@ -22,12 +22,14 @@ export class OAuthController {
       access_token: accessToken,
       refresh_token: refreshToken,
       location_id: locationId,
+      token_expiry: tokenExpiry,
     } = accessTokenData;
 
     await this.supabaseService.addRecord('oauth_tokens', {
       location_id: locationId,
       access_token: accessToken,
       refresh_token: refreshToken,
+      token_expiry: tokenExpiry,
     });
 
     // Redirect the user to their dashboard on Go High Level
@@ -58,6 +60,7 @@ export class OAuthController {
           access_token: response.access_token,
           refresh_token: response.refresh_token,
           locationId: response.locationId,
+          tokenExpiry: response.expires_in,
         };
       } else {
         throw new Error('No access token received');
@@ -65,6 +68,70 @@ export class OAuthController {
     } catch (error) {
       console.error('Error obtaining access token:', error);
       throw error;
+    }
+  }
+
+  async refreshToken(
+    refreshToken: string,
+    locationId: string,
+  ): Promise<string> {
+    try {
+      const observable = this.httpService.post(
+        'https://api.gohighlevel.com/OAuth/token',
+        {
+          client_id: process.env.CLIENT_ID,
+          client_secret: process.env.CLIENT_SECRET,
+          refresh_token: refreshToken,
+          grant_type: 'refresh_token',
+        },
+      );
+
+      const response = await firstValueFrom(
+        observable.pipe(map((axiosResponse) => axiosResponse.data)),
+      );
+
+      if (response && response.access_token) {
+        // store new token in database
+        await this.supabaseService.updateRecord(
+          'oauth_tokens',
+          {
+            access_token: response.access_token,
+            token_expiry: response.expires_in,
+          },
+          locationId,
+        );
+
+        return response.access_token;
+      } else {
+        throw new Error('Failed to refresh token');
+      }
+    } catch (error) {
+      console.error('Error refreshing access token:', error);
+      throw error;
+    }
+  }
+
+  async getToken(locationId: string): Promise<string> {
+    const tokenIsExpired =
+      await this.supabaseService.isTokenExpired(locationId);
+
+    if (tokenIsExpired) {
+      const refreshToken =
+        await this.supabaseService.fetchRefreshToken(locationId);
+      const freshToken = await this.refreshToken(refreshToken, locationId);
+
+      // Update the new token and its expiration time back to the database
+      // You could also do this inside the refreshToken() method
+      await this.supabaseService.addRecord('oauth_tokens', {
+        location_id: locationId,
+        access_token: freshToken,
+        // Add other fields like refresh_token and token_expiry
+      });
+
+      return freshToken;
+    } else {
+      // Fetch and return the existing, non-expired token from the database
+      return await this.supabaseService.fetchCurrentToken(locationId);
     }
   }
 }
