@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ContactCreateDto } from 'src/contact-create.dto';
 import { firstValueFrom } from 'rxjs';
+import { OAuthController } from 'src/oauth/oauth.controller';
 
 @Injectable()
 export class CrmService {
