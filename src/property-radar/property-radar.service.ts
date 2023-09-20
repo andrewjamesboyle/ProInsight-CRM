@@ -20,7 +20,7 @@ export class PropertyRadarService {
       ],
       Purchase: '1',
       Fields: 'Overview',
-      Limit: '10', // match the first three properties per CRM custom fields
+      Limit: '3', // match the first three properties per CRM custom fields
       Sort: '',
       Start: '0',
     };
