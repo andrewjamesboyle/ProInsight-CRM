@@ -20,11 +20,12 @@ export class WorkflowManagerService {
         await this.propertyRadarService.fetchPropertyDetails(contactDetails);
       console.log('Fetched property details: ', propertyDetails);
 
-      // Merge and Update Contact
+      // Merge PR data to enrich Contact Custom Fields
       console.log('Updating Contact Property Details...');
-      const updatedContactDetails = this.mergeContactAndPropertyDetails(
+      const contactCustomFields = this.mapPrDataToCrm(propertyDetails);
+      const updatedContactDetails = this.buildUpsertContactObject(
+        contactCustomFields,
         contactDetails,
-        propertyDetails,
       );
       await this.crmService.updateContacts(updatedContactDetails);
     } catch (error) {
@@ -32,13 +33,44 @@ export class WorkflowManagerService {
     }
   }
 
-  private mergeContactAndPropertyDetails(
+  private mapPrDataToCrm(propertyDetails: any) {
+    const numberOfPropertiesOwned = propertyDetails.results.length;
+    const totalEstimatedValue = propertyDetails.results.reduce(
+      (acc: number, curr: any) => acc + curr.AVM,
+      0,
+    );
+    const totalAvailableEquity = propertyDetails.results.reduce(
+      (acc: number, curr: any) => acc + curr.AvailableEquity,
+      0,
+    );
+
+    return [
+      {
+        key: 'number_of_properties_owned',
+        field_value: numberOfPropertiesOwned.toString(),
+      },
+      {
+        key: 'owners_total_value_of_properties',
+        field_value: totalEstimatedValue.toString(),
+      },
+      {
+        key: 'total_estimated_equity',
+        field_value: totalAvailableEquity.toString(),
+      },
+    ];
+  }
+
+  private buildUpsertContactObject(
+    contactCustomFields: any,
     contactDetails: any,
-    propertyDetails: any,
-  ): any {
-    // TO DO: add logic to merge contactDetails and propertyDetails here.
-    // I need to add the LocationId to the propertyDetails object
-    // return the merged object:
-    return { ...contactDetails, ...propertyDetails };
+  ) {
+    const enrichedContact = {
+      ...contactDetails,
+      customFields: contactCustomFields,
+    };
+
+    return {
+      enrichedContact,
+    };
   }
 }

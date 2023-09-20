@@ -14,13 +14,13 @@ export class PropertyRadarService {
         { name: 'OwnerPhone', value: [contact.phone] },
         { name: 'OwnerEmail', value: [contact.email] },
         { name: 'Address', value: [contact.address1] },
-        { name: 'City', value: [contact.city] },
-        { name: 'State', value: [contact.state] },
-        { name: 'ZipFive', value: [contact.postalCode] },
+        // { name: 'City', value: [contact.city] },
+        // { name: 'State', value: [contact.state] },
+        // { name: 'ZipFive', value: [contact.postalCode] },
       ],
-      Purchase: '0',
+      Purchase: '1',
       Fields: 'Overview',
-      Limit: '3', // match only the first three properties per CRM custom fields
+      Limit: '10', // match the first three properties per CRM custom fields
       Sort: '',
       Start: '0',
     };
