@@ -45,8 +45,7 @@ export class OAuthController {
           client_id: process.env.CLIENT_ID,
           client_secret: process.env.CLIENT_SECRET,
           code,
-          redirect_uri:
-            'https://pro-insight-isb4sdtn5-andrewjamesboyle.vercel.app/oauth/callback',
+          redirect_uri: 'https://pro-insight-crm.vercel.app/oauth/callback',
           grant_type: 'authorization_code',
         },
       );
