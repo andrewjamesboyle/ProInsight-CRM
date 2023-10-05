@@ -14,6 +14,8 @@ export class OAuthController {
 
   @Get('callback')
   async handleOAuthCallback(@Query('code') code: string, @Res() res: Response) {
+    console.log('Entering OAuth Callback with code:', code);
+
     // Exchange code for access token
     const accessTokenData = await this.getAccessToken(code);
 
