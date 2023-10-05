@@ -12,6 +12,11 @@ export class OAuthController {
     private readonly httpService: HttpService,
   ) {}
 
+  @Get('hello')
+  sayHello(): string {
+    return 'Hello World!';
+  }
+
   @Get('callback')
   async handleOAuthCallback(@Query('code') code: string, @Res() res: Response) {
     console.log('Entering OAuth Callback with code:', code);
