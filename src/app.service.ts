@@ -3,6 +3,6 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Hello World!';
+    return 'Thank you for installing the Database Diagnostic Tool. Please navigate back to your CRM.';
   }
 }

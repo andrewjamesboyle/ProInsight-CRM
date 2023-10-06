@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ContactCreateDto } from 'src/contact-create.dto';
 import { firstValueFrom } from 'rxjs';
-import { OAuthController } from 'src/oauth/oauth.controller';
+
+import { OAuthService } from 'src/oauth/oauth.service';
 
 @Injectable()
 export class CrmService {
   constructor(
     private httpService: HttpService,
-    private readonly oauthController: OAuthController,
+    private readonly oauthService: OAuthService,
   ) {}
 
   async extractContactDetails(contact: ContactCreateDto): Promise<any> {
@@ -38,7 +39,7 @@ export class CrmService {
 
   async updateContacts(updatedContactDetails: any): Promise<any> {
     try {
-      const token = await this.oauthController.getToken(
+      const token = await this.oauthService.getToken(
         updatedContactDetails.locationId,
       );
 
