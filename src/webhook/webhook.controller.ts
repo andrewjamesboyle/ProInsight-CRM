@@ -10,5 +10,6 @@ export class WebhookController {
   handleContactCreated(@Body() contact: ContactCreateDto) {
     return this.webhookService.handleContactCreatedEvent(contact);
   }
+
   // TO DO: evaluate API_TOKEN parameter
 }
