@@ -37,13 +37,19 @@ export class OAuthService {
   private async getAccessToken(code: string): Promise<any> {
     try {
       const observable = this.httpService.post(
-        'https://api.gohighlevel.com/OAuth/token',
+        // 'https://api.gohighlevel.com/OAuth/token',
+        'https://services.leadconnectorhq.com/oauth/token',
         {
           client_id: process.env.CLIENT_ID,
           client_secret: process.env.CLIENT_SECRET,
           code,
           redirect_uri: 'https://pro-insight-crm.vercel.app/oauth/callback',
           grant_type: 'authorization_code',
+        },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         },
       );
 
